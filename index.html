@@ -198,9 +198,9 @@ const LOSS_TAGS = ["EARLY","CHOP","REVERSAL","CHASE","OVERSIZED","FOMO","LOW VOL
   WIN/LOSS result classification is separate (✅ = winner logged in result column)
 */
 const EXIT_OUTCOME_OPTIONS = [
-  { key:"winner",    label:"✅ WINNER",        color:"green"  },
-  { key:"manual",    label:"⭐ MANUAL EXIT",  color:"blue"   },
-  { key:"smallStop", label:"⏹ SMALL STOP",   color:"yellow" },
+  { key:"winner",    label:"✅ WINNER",       color:"green"  },
+  { key:"manual",    label:"⭐ MANUAL EXIT",  color:"yellow" },
+  { key:"smallStop", label:"⏹ SMALL STOP",   color:"blue"   },
   { key:"hardStop",  label:"🔺 HARD STOP",   color:"red"    },
 ];
 
@@ -1292,7 +1292,7 @@ function KaizenTradeTemplate(){
       <div style={{borderBottom:"1px solid #27272a",padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
           <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"2px"}}>KAIZEN TRADE AUTOPSY</div>
-          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.0</div>
+          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.1</div>
         </div>
         <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
           {saved&&<span style={{color:"#10b981",fontSize:10,fontFamily:"monospace"}}>✓ ARCHIVED</span>}
