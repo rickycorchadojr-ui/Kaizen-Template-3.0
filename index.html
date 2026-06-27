@@ -92,10 +92,11 @@ textarea.field-input{min-height:76px;}
 .field-input::placeholder{color:#777!important;}
 .chip-base,button{border:3px solid #050505!important;border-radius:8px!important;font-weight:900!important;box-shadow:3px 3px 0 #050505!important;}
 .chip-base{background:#fff!important;color:#050505!important;padding:7px 12px!important;font-size:12px!important;}
-.chip-active-blue,.grade-active-B{background:var(--kk-blue)!important;color:#fff!important;}
+.chip-active-blue,.grade-active-C{background:var(--kk-blue)!important;color:#fff!important;}
+
 .chip-active-green,.grade-active-A{background:var(--kk-green)!important;color:#050505!important;}
 .chip-active-red,.grade-active-F{background:var(--kk-red)!important;color:#fff!important;}
-.chip-active-yellow,.grade-active-C{background:var(--kk-yellow)!important;color:#050505!important;}
+.chip-active-yellow,.grade-active-B{background:var(--kk-yellow)!important;color:#050505!important;}
 #root>div>div:first-child button{background:var(--kk-yellow)!important;color:#050505!important;}
 #print-btn{background:var(--kk-blue)!important;color:#fff!important;}
 #root>div>div:nth-child(2)>div:first-child{
@@ -477,12 +478,7 @@ function SummaryPanel({session}){
     {q:"Did I survive to trade tomorrow?",key:"survived"},
   ];
   const [checklist,setChecklist]=useState({followedRules:null,protectedAccounts:null,recorded:null,reviewed:null,survived:null});
-  const gradeColors={
-  A:"var(--kk-green)",
-  B:"var(--kk-blue)",
-  C:"var(--kk-yellow)",
-  F:"var(--kk-red)"
-};
+  const gradeColors={A:C.green,B:C.yellow,C:C.blue,F:C.red};
 
   return(
     <div className="border border-zinc-700 rounded-lg p-5 bg-zinc-950 mb-6">
@@ -799,7 +795,7 @@ function WinLossTable({title,trades,color}){
                   <td style={{padding:"6px 10px"}}>{exitIcon}</td>
                   <td style={{padding:"6px 10px",color:C.yellow}}>{t.mae||"—"}</td>
                   <td style={{padding:"6px 10px",color:C.blue}}>{t.mfe||"—"}</td>
-                  <td style={{padding:"6px 10px",color:t.grade==="A"?C.green:t.grade==="B"?C.blue:t.grade==="C"?C.yellow:t.grade==="F"?C.red:C.muted,fontWeight:700}}>{t.grade||"—"}</td>
+                  <td style={{padding:"6px 10px",color:t.grade==="A"?C.green:t.grade==="B"?C.yellow:t.grade==="C"?C.blue:t.grade==="F"?C.red:C.muted,fontWeight:700}}>{t.grade||"—"}</td>
                   <td style={{padding:"6px 10px",color:C.muted}}>{t.setupTag||"—"}</td>
                   <td style={{padding:"6px 10px",color:C.muted,maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.why||"—"}</td>
                 </tr>
@@ -991,7 +987,7 @@ function AnalyticsDashboard({historicalSessions}){
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
             <div className="dash-card" style={{padding:16}}>
               <SectionHead mt={0}>TRADE GRADES</SectionHead>
-              {[["A",C.green],["B",C.blue],["C",C.yellow],["F",C.red]].map(([g,c])=>(
+              {[["A",C.green],["B",C.yellow],["C",C.blue],["F",C.red]].map(([g,c])=>(
                 <Bar2 key={g} label={g} val={grades[g]} max={Math.max(...Object.values(grades),1)} color={c}/>
               ))}
             </div>
@@ -1199,7 +1195,7 @@ function AnalyticsDashboard({historicalSessions}){
                       <td style={{padding:"7px 10px",fontSize:14}}>{exitIcon}</td>
                       <td style={{padding:"7px 10px",color:C.yellow}}>{t.mae||"—"}</td>
                       <td style={{padding:"7px 10px",color:C.blue}}>{t.mfe||"—"}</td>
-                      <td style={{padding:"7px 10px",color:t.grade==="A"?C.green:t.grade==="B"?C.blue:t.grade==="C"?C.yellow:t.grade==="F"?C.red:C.muted,fontWeight:700}}>{t.grade||"—"}</td>
+                      <td style={{padding:"7px 10px",color:t.grade==="A"?C.green:t.grade==="B"?C.yellow:t.grade==="C"?C.blue:t.grade==="F"?C.red:C.muted,fontWeight:700}}>{t.grade||"—"}</td>
                       <td style={{padding:"7px 10px",color:t.immediateFollowThrough===true?C.green:t.immediateFollowThrough===false?C.red:C.faint}}>{t.immediateFollowThrough===true?"Y":t.immediateFollowThrough===false?"N":"—"}</td>
                       <td style={{padding:"7px 10px",color:t.negotiable===true?C.green:t.negotiable===false?C.red:C.faint}}>{t.negotiable===true?"Y":t.negotiable===false?"N":"—"}</td>
                       <td style={{padding:"7px 10px",color:C.muted}}>{t.setupTag||"—"}</td>
@@ -1298,7 +1294,7 @@ function KaizenTradeTemplate(){
       <div style={{borderBottom:"1px solid #27272a",padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
           <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"2px"}}>KAIZEN TRADE AUTOPSY</div>
-          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.4</div>
+          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.3</div>
         </div>
         <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
           {saved&&<span style={{color:"#10b981",fontSize:10,fontFamily:"monospace"}}>✓ ARCHIVED</span>}
@@ -1461,7 +1457,7 @@ function KaizenTradeTemplate(){
 
         {/* Footer */}
         <div style={{marginTop:"32px",borderTop:"1px solid #27272a",paddingTop:"16px",color:"#52525b",fontSize:"10px",textAlign:"center"}}>
-          Kaizen Log v4.1.4 · ✅ Winner · ⭐ Manual Exit · ⏹ Small Stop · 🔺 Hard Stop · The account staying open is the win condition.
+          Kaizen Log v4.1.3 · ✅ Winner · ⭐ Manual Exit · ⏹ Small Stop · 🔺 Hard Stop · The account staying open is the win condition.
         </div>
       </div>
     </div>
