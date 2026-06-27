@@ -229,6 +229,7 @@ const emptySession = () => ({
   ritualPerformed:null,
   recordingStarted:null,
   riskLocked:null,
+  videosDeleted:null,
 });
 
 /* ─── Shared UI atoms ─── */
@@ -950,7 +951,7 @@ function AnalyticsDashboard({historicalSessions}){
             <Stat label="IFT YES / NO" value={`${iftYes} / ${iftNo}`} sub="immediate followthrough"/>
             <Stat label="NEGOTIABLE Y/N" value={`${negYes} / ${negNo}`} sub="market gave time"/>
             <Stat label="ENV CORRECT" value={correctEnvCalls} sub={`of ${historicalSessions.length} sessions`} color={C.blue}/>
-            <Stat label="⭐ MANUAL EXITS" value={manualExits} sub="land the plane" color={C.blue}/>
+            <Stat label="⭐ MANUAL EXITS" value={manualExits} sub="land the plane" color={C.yellow}/>
           </div>
           <SectionHead mt={0}>EQUITY PERFORMANCE CURVE</SectionHead>
           {pnlCurve.length>0&&(
@@ -1055,8 +1056,8 @@ function AnalyticsDashboard({historicalSessions}){
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
             <Stat label="✅ WINNERS" value={exitOutcomeCounts.winner.total} color={C.green} sub={`${exitOutcomeCounts.winner.win} wins / ${exitOutcomeCounts.winner.loss} losses`}/>
-            <Stat label="⭐ MANUAL EXITS" value={exitOutcomeCounts.manual.total} color={C.blue} sub={`${exitOutcomeCounts.manual.win} wins / ${exitOutcomeCounts.manual.loss} losses`}/>
-            <Stat label="⏹ SMALL STOPS" value={exitOutcomeCounts.smallStop.total} color={C.yellow} sub={`${exitOutcomeCounts.smallStop.win} wins / ${exitOutcomeCounts.smallStop.loss} losses`}/>
+            <Stat label="⭐ MANUAL EXITS" value={exitOutcomeCounts.manual.total} color={C.yellow} sub={`${exitOutcomeCounts.manual.win} wins / ${exitOutcomeCounts.manual.loss} losses`}/>
+            <Stat label="⏹ SMALL STOPS" value={exitOutcomeCounts.smallStop.total} color={C.blue} sub={`${exitOutcomeCounts.smallStop.win} wins / ${exitOutcomeCounts.smallStop.loss} losses`}/>
             <Stat label="🔺 HARD STOPS" value={exitOutcomeCounts.hardStop.total} color={C.red} sub={`${exitOutcomeCounts.hardStop.win} wins / ${exitOutcomeCounts.hardStop.loss} losses`}/>
           </div>
           <div className="dash-card" style={{padding:16,marginBottom:16}}>
@@ -1103,8 +1104,8 @@ function AnalyticsDashboard({historicalSessions}){
                 <div key={s.id||s.date} style={{display:"flex",gap:12,alignItems:"center",marginBottom:8}}>
                   <span style={{...mono,color:C.muted,fontSize:9,width:60}}>{s.date}</span>
                   <span style={{...mono,color:C.green,fontSize:11}}>✅×{winner}</span>
-                  <span style={{...mono,color:C.blue,fontSize:11}}>⭐×{manual}</span>
-                  <span style={{...mono,color:C.yellow,fontSize:11}}>⏹×{small}</span>
+                  <span style={{...mono,color:C.yellow,fontSize:11}}>⭐×{manual}</span>
+                  <span style={{...mono,color:C.blue,fontSize:11}}>⏹×{small}</span>
                   <span style={{...mono,color:C.red,fontSize:11}}>🔺×{hard}</span>
                 </div>
               );
@@ -1228,7 +1229,7 @@ function AnalyticsDashboard({historicalSessions}){
                     <span style={{...mono,color:spnl>=0?C.green:C.red,fontSize:13,fontWeight:700}}>{spnl>=0?"+":""}{spnl.toFixed(0)}</span>
                     <span style={{...mono,color:C.muted,fontSize:10}}>{wins}W/{wr.length-wins}L</span>
                     {winners_s>0&&<span style={{...mono,color:C.green,fontSize:11}}>✅{winners_s}</span>}
-                    <span style={{...mono,color:C.blue,fontSize:11}}>⭐{manuals}</span>
+                    <span style={{...mono,color:C.yellow,fontSize:11}}>⭐{manuals}</span>
                     {hards>0&&<span style={{...mono,color:C.red,fontSize:11}}>🔺{hards}</span>}
                     <span style={{...mono,color:s.survived?C.green:C.faint,fontSize:10}}>{s.survived?"✓ SURVIVED":"—"}</span>
                   </div>
@@ -1292,7 +1293,7 @@ function KaizenTradeTemplate(){
       <div style={{borderBottom:"1px solid #27272a",padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
           <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"2px"}}>KAIZEN TRADE AUTOPSY</div>
-          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.1</div>
+          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.2</div>
         </div>
         <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
           {saved&&<span style={{color:"#10b981",fontSize:10,fontFamily:"monospace"}}>✓ ARCHIVED</span>}
@@ -1336,7 +1337,7 @@ function KaizenTradeTemplate(){
                   ].map(({key,label})=>(
                     <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                       <span style={{fontFamily:"'JetBrains Mono','Courier New',monospace",color:"#a1a1aa",fontSize:"11px"}}>{label}</span>
-                      <YesNo value={session[key]||null} onChange={v=>updateSession(key,v)}/>
+                      <YesNo value={session[key] ?? null} onChange={v=>updateSession(key,v)}/>
                     </div>
                   ))}
                 </div>
@@ -1411,7 +1412,7 @@ function KaizenTradeTemplate(){
                   Win: Exclaim "YES!" → Clench fist → Rafa Nadal Reset<br/>
                   Loss: Touch nose and both eyebrows → 3 deep breaths → Ben back to Ricky
                 </div>
-                <YesNo value={session.ritualPerformed||null} onChange={v=>updateSession("ritualPerformed",v)}/>
+                <YesNo value={session.ritualPerformed ?? null} onChange={v=>updateSession("ritualPerformed",v)}/>
               </div>
 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"12px",marginBottom:"16px"}}>
@@ -1455,7 +1456,7 @@ function KaizenTradeTemplate(){
 
         {/* Footer */}
         <div style={{marginTop:"32px",borderTop:"1px solid #27272a",paddingTop:"16px",color:"#52525b",fontSize:"10px",textAlign:"center"}}>
-          Kaizen Log v4 · ✅ Winner · ⭐ Manual Exit · ⏹ Small Stop · 🔺 Hard Stop · The account staying open is the win condition.
+          Kaizen Log v4.1.2 · ✅ Winner · ⭐ Manual Exit · ⏹ Small Stop · 🔺 Hard Stop · The account staying open is the win condition.
         </div>
       </div>
     </div>
