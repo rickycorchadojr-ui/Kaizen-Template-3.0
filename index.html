@@ -477,7 +477,7 @@ function SummaryPanel({session}){
     {q:"Did I survive to trade tomorrow?",key:"survived"},
   ];
   const [checklist,setChecklist]=useState({followedRules:null,protectedAccounts:null,recorded:null,reviewed:null,survived:null});
-  const gradeColors={A:"text-emerald-400",B:"text-blue-400",C:"text-yellow-400",F:"text-red-400"};
+  const gradeColors={A:C.green,B:C.blue,C:C.yellow,F:C.red};
 
   return(
     <div className="border border-zinc-700 rounded-lg p-5 bg-zinc-950 mb-6">
@@ -552,7 +552,7 @@ function SummaryPanel({session}){
           <div className="flex gap-3">
             {["A","B","C","F"].map(g=>(
               <div key={g} className="text-center">
-                <div className={`text-xl font-mono font-bold ${gradeColors[g]}`}>{gradeCounts[g]}</div>
+                <div className="text-xl font-mono font-bold" style={{color:gradeColors[g]}}>{gradeCounts[g]}</div>
                 <div className="text-xs text-zinc-500 font-mono">{g}</div>
               </div>
             ))}
@@ -1293,7 +1293,7 @@ function KaizenTradeTemplate(){
       <div style={{borderBottom:"1px solid #27272a",padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
           <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"2px"}}>KAIZEN TRADE AUTOPSY</div>
-          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.2</div>
+          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.3</div>
         </div>
         <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
           {saved&&<span style={{color:"#10b981",fontSize:10,fontFamily:"monospace"}}>✓ ARCHIVED</span>}
@@ -1456,7 +1456,7 @@ function KaizenTradeTemplate(){
 
         {/* Footer */}
         <div style={{marginTop:"32px",borderTop:"1px solid #27272a",paddingTop:"16px",color:"#52525b",fontSize:"10px",textAlign:"center"}}>
-          Kaizen Log v4.1.2 · ✅ Winner · ⭐ Manual Exit · ⏹ Small Stop · 🔺 Hard Stop · The account staying open is the win condition.
+          Kaizen Log v4.1.3 · ✅ Winner · ⭐ Manual Exit · ⏹ Small Stop · 🔺 Hard Stop · The account staying open is the win condition.
         </div>
       </div>
     </div>
