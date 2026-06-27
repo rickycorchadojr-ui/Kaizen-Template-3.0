@@ -198,21 +198,12 @@ const LOSS_TAGS = ["EARLY","CHOP","REVERSAL","CHASE","OVERSIZED","FOMO","LOW VOL
   WIN/LOSS result classification is separate (✅ = winner logged in result column)
 */
 const EXIT_OUTCOME_OPTIONS = [
-  { key:"manual",    label:"⭐ MANUAL EXIT",  color:"green"  },
+  { key:"winner",    label:"✅ WINNER",        color:"green"  },
+  { key:"manual",    label:"⭐ MANUAL EXIT",  color:"blue"   },
   { key:"smallStop", label:"⏹ SMALL STOP",   color:"yellow" },
   { key:"hardStop",  label:"🔺 HARD STOP",   color:"red"    },
 ];
 
-/*
-  RESULT CLASSIFICATION — mirrors journal W/L notation.
-  A trade result is marked ✅ when it's a winner (positive P&L).
-  This is derived automatically from the result field.
-*/
-const resultLabel = (resultStr) => {
-  const n = parseFloat(resultStr);
-  if (isNaN(n) || resultStr === "") return "";
-  return n >= 0 ? "✅" : "";
-};
 
 const emptyTrade = () => ({
   id: Date.now() + Math.random(),
@@ -238,7 +229,6 @@ const emptySession = () => ({
   ritualPerformed:null,
   recordingStarted:null,
   riskLocked:null,
-  videosDeleted:null,
 });
 
 /* ─── Shared UI atoms ─── */
@@ -328,10 +318,9 @@ function TradeCard({trade,index,onChange,onRemove}){
         <div className="flex items-center gap-3">
           <span className="text-zinc-500 font-mono text-sm">TRADE</span>
           <span className="text-white font-mono text-xl font-bold">#{index+1}</span>
-          {/* ✅ winner badge — mirrors journal W notation */}
-          {isWinner && <span style={{fontSize:"18px"}} title="Winner">✅</span>}
           {trade.result!==""&&<span className={`font-mono text-lg font-bold ${resultColor}`}>{resultNum>=0?"+":""}{trade.result}</span>}
           {/* Exit outcome badge next to trade header */}
+          {trade.exitOutcome==="winner"    && <span style={{fontSize:"18px"}} title="Winner">✅</span>}
           {trade.exitOutcome==="manual"    && <span style={{fontSize:"16px"}} title="Manual Exit — Land the Plane">⭐</span>}
           {trade.exitOutcome==="smallStop" && <span style={{fontSize:"16px"}} title="Small Stop">⏹</span>}
           {trade.exitOutcome==="hardStop"  && <span style={{fontSize:"16px"}} title="Hard Stop">🔺</span>}
@@ -360,12 +349,9 @@ function TradeCard({trade,index,onChange,onRemove}){
 
       {/* Result · MAE · MFE */}
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <Field label="Result ($)" hint="Actual P&L in dollars — ✅ = winner">
+        <Field label="Result ($)" hint="Actual P&L in dollars">
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <Input value={trade.result} onChange={v=>update("result",v)} placeholder="+50"/>
-            {trade.result !== "" && !isNaN(parseFloat(trade.result)) && (
-              <span style={{fontSize:"20px"}}>{resultLabel(trade.result)}</span>
-            )}
           </div>
         </Field>
         <Field label="MAE (pts)" hint="How far against you before resolution — TIER 1"><Input value={trade.mae} onChange={v=>update("mae",v)} placeholder="8"/></Field>
@@ -373,7 +359,7 @@ function TradeCard({trade,index,onChange,onRemove}){
       </div>
 
       {/* Exit Outcome — matches journal symbols */}
-      <Field label="Exit Outcome" hint="⭐ = Land the Plane (manual)  ⏹ = Small Stop  🔺 = Hard Stop">
+      <Field label="Exit Outcome" hint="✅ = Winner  ⭐ = Land the Plane (manual)  ⏹ = Small Stop  🔺 = Hard Stop">
         <div className="flex flex-wrap gap-2">
           {EXIT_OUTCOME_OPTIONS.map(o=>(
             <Chip key={o.key} label={o.label} active={trade.exitOutcome===o.key} onClick={()=>update("exitOutcome",trade.exitOutcome===o.key?"":o.key)} color={o.color}/>
@@ -463,6 +449,7 @@ function SummaryPanel({session}){
 
   /* Exit outcome counts */
   const exitCounts = {
+    winner:    { win:0, loss:0, total:0 },
     manual:    { win:0, loss:0, total:0 },
     smallStop: { win:0, loss:0, total:0 },
     hardStop:  { win:0, loss:0, total:0 },
@@ -498,7 +485,7 @@ function SummaryPanel({session}){
         {[
           {label:"NET P&L",value:(totalPnL>=0?"+":"")+totalPnL.toFixed(0),color:totalPnL>=0?"text-emerald-400":"text-red-400"},
           {label:"WIN RATE",value:winRate!==null?`${winRate}%`:"—",color:"text-zinc-100"},
-          {label:"AVG MAE (✅ W)",value:winMAE!==null?winMAE:"—",color:"text-emerald-400"},
+          {label:"AVG MAE (W)",value:winMAE!==null?winMAE:"—",color:"text-emerald-400"},
           {label:"AVG MAE (L)",value:lossMAE!==null?lossMAE:"—",color:"text-red-400"},
         ].map(({label,value,color})=>(
           <div key={label} className="bg-zinc-900 rounded p-3 text-center">
@@ -509,7 +496,7 @@ function SummaryPanel({session}){
       </div>
       <div className="grid grid-cols-4 gap-4 mb-4">
         {[
-          {label:"AVG MFE (✅ W)",value:winMFE!==null?winMFE:"—",color:"text-emerald-400"},
+          {label:"AVG MFE (W)",value:winMFE!==null?winMFE:"—",color:"text-emerald-400"},
           {label:"AVG MFE (L)",value:lossMFE!==null?lossMFE:"—",color:"text-red-400"},
           {label:"IFT Y/N",value:`${iftYes} / ${iftNo}`,color:"text-zinc-100"},
           {label:"NEG Y/N",value:`${negYes} / ${negNo}`,color:"text-zinc-100"},
@@ -524,7 +511,7 @@ function SummaryPanel({session}){
       {/* Exit Outcome Summary — journal symbol legend */}
       <div className="bg-zinc-900 rounded p-3 mb-4">
         <div className="text-xs text-zinc-500 font-mono mb-1">EXIT OUTCOME SUMMARY</div>
-        <div style={{...mono,color:C.faint,fontSize:9,marginBottom:8}}>⭐ MANUAL EXIT · ⏹ SMALL STOP · 🔺 HARD STOP · ✅ = WINNING TRADE</div>
+        <div style={{...mono,color:C.faint,fontSize:9,marginBottom:8}}>✅ WINNER · ⭐ MANUAL EXIT · ⏹ SMALL STOP · 🔺 HARD STOP</div>
         <div className="tbl-wrap">
           <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
             <thead>
@@ -654,6 +641,7 @@ function GrandSlams({stats}){
     {label:"F-Grade Free Streak",val:stats.freeStreak,targets:[10,25,50]},
     {label:"Non-Expansion Sessions",val:stats.nonExpansionSessions,targets:[10,30,60]},
     {label:"Manual Exits (⭐)",val:stats.manualExits,targets:[25,100,250]},
+    {label:"Winner Exits (✅)",val:stats.winnerExits,targets:[25,100,250]},
     {label:"Zero Hard Stops Streak",val:stats.hardStopFreeStreak,targets:[5,15,30]},
   ];
   return(
@@ -793,14 +781,14 @@ function WinLossTable({title,trades,color}){
           <tbody>
             {trades.map((t,i)=>{
               const res=parseFloat(t.result);
-              const exitIcon = t.exitOutcome==="manual"?"⭐":t.exitOutcome==="smallStop"?"⏹":t.exitOutcome==="hardStop"?"🔺":"—";
+              const exitIcon = t.exitOutcome==="winner"?"✅":t.exitOutcome==="manual"?"⭐":t.exitOutcome==="smallStop"?"⏹":t.exitOutcome==="hardStop"?"🔺":"—";
               return(
                 <tr key={i} style={{borderBottom:`1px solid ${C.border}`}}>
                   <td style={{padding:"6px 10px",color:C.muted}}>{t.sessionDate}</td>
                   <td style={{padding:"6px 10px",color:t.direction==="LONG"?C.green:t.direction==="SHORT"?C.red:C.muted}}>{t.direction||"—"}</td>
                   <td style={{padding:"6px 10px",color:C.muted}}>{t.contracts||"—"}</td>
                   <td style={{padding:"6px 10px",color:isNaN(res)?C.muted:res>=0?C.green:C.red,fontWeight:700}}>
-                    {isNaN(res)?t.result:`${res>=0?"✅ +":""}${isNaN(res)?t.result:res}`}
+                    {isNaN(res)?t.result:`${res>=0?"+":""}${isNaN(res)?t.result:res}`}
                   </td>
                   <td style={{padding:"6px 10px"}}>{exitIcon}</td>
                   <td style={{padding:"6px 10px",color:C.yellow}}>{t.mae||"—"}</td>
@@ -835,6 +823,7 @@ function AnalyticsDashboard({historicalSessions}){
   const losers=withRes.filter(t=>parseFloat(t.result)<0);
 
   const exitOutcomeCounts = {
+    winner:    { win:0, loss:0, total:0 },
     manual:    { win:0, loss:0, total:0 },
     smallStop: { win:0, loss:0, total:0 },
     hardStop:  { win:0, loss:0, total:0 },
@@ -905,10 +894,11 @@ function AnalyticsDashboard({historicalSessions}){
   for(let i=allTrades.length-1;i>=0;i--){if(allTrades[i].grade==="F")break;if(allTrades[i].grade)freeStreak++;}
   const nonExpansionSessions=historicalSessions.filter(s=>s.environment&&s.environment!=="EXPANSION"&&s.environment!=="CHOP").length;
   const manualExits=allTrades.filter(t=>t.exitOutcome==="manual").length;
+  const winnerExits=allTrades.filter(t=>t.exitOutcome==="winner").length;
   /* Hard-stop-free streak */
   let hardStopFreeStreak=0;
   for(let i=allTrades.length-1;i>=0;i--){if(allTrades[i].exitOutcome==="hardStop")break;hardStopFreeStreak++;}
-  const gStats={totalTrades:allTrades.length,totalSessions:historicalSessions.length,currentStreak:historicalSessions.length,totalAvoided,correctEnvCalls,aGrades:grades.A,freeStreak,nonExpansionSessions,manualExits,hardStopFreeStreak};
+  const gStats={totalTrades:allTrades.length,totalSessions:historicalSessions.length,currentStreak:historicalSessions.length,totalAvoided,correctEnvCalls,aGrades:grades.A,freeStreak,nonExpansionSessions,manualExits,winnerExits,hardStopFreeStreak};
 
   const chartData=historicalSessions.map((s,idx)=>{
     const ct=(s.trades||[]).filter(t=>t.result!==""&&!isNaN(parseFloat(t.result)));
@@ -931,7 +921,7 @@ function AnalyticsDashboard({historicalSessions}){
       </div>
       <div className="dash-tab-bar" style={{padding:"0 20px",display:"flex",flexWrap:"wrap",borderBottom:`1px solid ${C.border}`}}>
         {TAB("overview","OVERVIEW")}
-        {TAB("exits","⭐⏹🔺 EXITS")}
+        {TAB("exits","✅⭐⏹🔺 EXITS")}
         {TAB("slams","GRAND SLAMS")}
         {TAB("maemfe","MAE / MFE")}
         {TAB("contracts","CONTRACTS")}
@@ -946,21 +936,21 @@ function AnalyticsDashboard({historicalSessions}){
         {dashView==="overview"&&<>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
             <Stat label="NET P&L ($)" value={`${totalPnL>=0?"+":""}${totalPnL.toFixed(0)}`} color={totalPnL>=0?C.green:C.red} sub={`${historicalSessions.length} sessions`}/>
-            <Stat label="WIN RATE" value={`${winRate}%`} sub={`${winners.length}✅ / ${losers.length}L`} color={parseFloat(winRate)>=55?C.green:parseFloat(winRate)>=45?C.yellow:C.red}/>
+            <Stat label="WIN RATE" value={`${winRate}%`} sub={`${winners.length}W / ${losers.length}L`} color={parseFloat(winRate)>=55?C.green:parseFloat(winRate)>=45?C.yellow:C.red}/>
             <Stat label="AVG WIN / LOSS" value={`+${avgWin}`} sub={`avg loss ${avgLoss}`} color={C.green}/>
             <Stat label="TRADES REVIEWED" value={allTrades.length} sub={`${totalAvoided} setups avoided`} color={C.blue}/>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:16}}>
-            <Stat label="AVG MAE ✅ WIN" value={winMAE_avg} color={C.green} sub="pts adverse excursion"/>
+            <Stat label="AVG MAE WIN" value={winMAE_avg} color={C.green} sub="pts adverse excursion"/>
             <Stat label="AVG MAE LOSS" value={lossMAE_avg} color={C.red} sub="pts adverse excursion"/>
-            <Stat label="AVG MFE ✅ WIN" value={winMFE_avg} color={C.green} sub="pts max favorable"/>
+            <Stat label="AVG MFE WIN" value={winMFE_avg} color={C.green} sub="pts max favorable"/>
             <Stat label="AVG MFE LOSS" value={lossMFE_avg} color={C.red} sub="pts max favorable"/>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
             <Stat label="IFT YES / NO" value={`${iftYes} / ${iftNo}`} sub="immediate followthrough"/>
             <Stat label="NEGOTIABLE Y/N" value={`${negYes} / ${negNo}`} sub="market gave time"/>
             <Stat label="ENV CORRECT" value={correctEnvCalls} sub={`of ${historicalSessions.length} sessions`} color={C.blue}/>
-            <Stat label="⭐ MANUAL EXITS" value={manualExits} sub="land the plane" color={C.green}/>
+            <Stat label="⭐ MANUAL EXITS" value={manualExits} sub="land the plane" color={C.blue}/>
           </div>
           <SectionHead mt={0}>EQUITY PERFORMANCE CURVE</SectionHead>
           {pnlCurve.length>0&&(
@@ -1061,12 +1051,13 @@ function AnalyticsDashboard({historicalSessions}){
         {/* ── EXIT OUTCOMES TAB ── */}
         {dashView==="exits"&&<>
           <div style={{...mono,color:C.muted,fontSize:10,marginBottom:16,fontStyle:"italic"}}>
-            ⭐ MANUAL EXIT = Land the Plane — best outcome · ⏹ SMALL STOP = manageable · 🔺 HARD STOP = discipline failure · ✅ = winning trade result
+            ✅ WINNER = hit target · ⭐ MANUAL EXIT = Land the Plane · ⏹ SMALL STOP = manageable · 🔺 HARD STOP = discipline failure
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
-            <Stat label="⭐ MANUAL EXITS" value={exitOutcomeCounts.manual.total} color={C.green} sub={`${exitOutcomeCounts.manual.win}✅ wins / ${exitOutcomeCounts.manual.loss} losses`}/>
-            <Stat label="⏹ SMALL STOPS" value={exitOutcomeCounts.smallStop.total} color={C.yellow} sub={`${exitOutcomeCounts.smallStop.win}✅ wins / ${exitOutcomeCounts.smallStop.loss} losses`}/>
-            <Stat label="🔺 HARD STOPS" value={exitOutcomeCounts.hardStop.total} color={C.red} sub={`${exitOutcomeCounts.hardStop.win}✅ wins / ${exitOutcomeCounts.hardStop.loss} losses`}/>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
+            <Stat label="✅ WINNERS" value={exitOutcomeCounts.winner.total} color={C.green} sub={`${exitOutcomeCounts.winner.win} wins / ${exitOutcomeCounts.winner.loss} losses`}/>
+            <Stat label="⭐ MANUAL EXITS" value={exitOutcomeCounts.manual.total} color={C.blue} sub={`${exitOutcomeCounts.manual.win} wins / ${exitOutcomeCounts.manual.loss} losses`}/>
+            <Stat label="⏹ SMALL STOPS" value={exitOutcomeCounts.smallStop.total} color={C.yellow} sub={`${exitOutcomeCounts.smallStop.win} wins / ${exitOutcomeCounts.smallStop.loss} losses`}/>
+            <Stat label="🔺 HARD STOPS" value={exitOutcomeCounts.hardStop.total} color={C.red} sub={`${exitOutcomeCounts.hardStop.win} wins / ${exitOutcomeCounts.hardStop.loss} losses`}/>
           </div>
           <div className="dash-card" style={{padding:16,marginBottom:16}}>
             <SectionHead mt={0}>EXIT OUTCOME DETAIL</SectionHead>
@@ -1101,16 +1092,18 @@ function AnalyticsDashboard({historicalSessions}){
           </div>
           <div className="dash-card" style={{padding:16}}>
             <SectionHead mt={0}>EXIT TYPE TREND (last sessions)</SectionHead>
-            <div style={{...mono,color:C.muted,fontSize:9,marginBottom:8}}>Goal: more ⭐, fewer 🔺</div>
+            <div style={{...mono,color:C.muted,fontSize:9,marginBottom:8}}>Goal: more ✅, more ⭐, fewer 🔺</div>
             {historicalSessions.slice(-10).map(s=>{
               const st=s.trades||[];
+              const winner=st.filter(t=>t.exitOutcome==="winner").length;
               const manual=st.filter(t=>t.exitOutcome==="manual").length;
               const small=st.filter(t=>t.exitOutcome==="smallStop").length;
               const hard=st.filter(t=>t.exitOutcome==="hardStop").length;
               return(
                 <div key={s.id||s.date} style={{display:"flex",gap:12,alignItems:"center",marginBottom:8}}>
                   <span style={{...mono,color:C.muted,fontSize:9,width:60}}>{s.date}</span>
-                  <span style={{...mono,color:C.green,fontSize:11}}>⭐×{manual}</span>
+                  <span style={{...mono,color:C.green,fontSize:11}}>✅×{winner}</span>
+                  <span style={{...mono,color:C.blue,fontSize:11}}>⭐×{manual}</span>
                   <span style={{...mono,color:C.yellow,fontSize:11}}>⏹×{small}</span>
                   <span style={{...mono,color:C.red,fontSize:11}}>🔺×{hard}</span>
                 </div>
@@ -1134,15 +1127,15 @@ function AnalyticsDashboard({historicalSessions}){
         {/* ── MAE / MFE ── */}
         {dashView==="maemfe"&&<>
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:20}}>
-            <Stat label="AVG MAE ✅ WIN" value={winMAE_avg} color={C.green} sub="pts adverse excursion"/>
+            <Stat label="AVG MAE WIN" value={winMAE_avg} color={C.green} sub="pts adverse excursion"/>
             <Stat label="AVG MAE LOSS" value={lossMAE_avg} color={C.red} sub="pts adverse excursion"/>
-            <Stat label="AVG MFE ✅ WIN" value={winMFE_avg} color={C.green} sub="pts max favorable"/>
+            <Stat label="AVG MFE WIN" value={winMFE_avg} color={C.green} sub="pts max favorable"/>
             <Stat label="AVG MFE LOSS" value={lossMFE_avg} color={C.red} sub="pts max favorable"/>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-            <FreqTable title="MAE — ✅ WINNING TRADES" data={maeWinData} color={C.green}/>
+            <FreqTable title="MAE — WINNING TRADES" data={maeWinData} color={C.green}/>
             <FreqTable title="MAE — LOSING TRADES" data={maeLossData} color={C.red}/>
-            <FreqTable title="MFE — ✅ WINNING TRADES" data={mfeWinData} color={C.green}/>
+            <FreqTable title="MFE — WINNING TRADES" data={mfeWinData} color={C.green}/>
             <FreqTable title="MFE — LOSING TRADES" data={mfeLossData} color={C.red}/>
           </div>
         </>}
@@ -1159,7 +1152,7 @@ function AnalyticsDashboard({historicalSessions}){
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
             <Stat label="✅ TOTAL WINNERS" value={winners.length} color={C.green}/>
             <Stat label="AVG WIN ($)" value={`+${avgWin}`} color={C.green}/>
-            <Stat label="AVG MFE ✅ WIN" value={winMFE_avg} color={C.green} sub="max favorable excursion"/>
+            <Stat label="AVG MFE WIN" value={winMFE_avg} color={C.green} sub="max favorable excursion"/>
           </div>
           <WinLossTable title="✅ WINNING TRADES" trades={winners} color={C.green}/>
         </>}
@@ -1188,14 +1181,14 @@ function AnalyticsDashboard({historicalSessions}){
               <tbody>
                 {allTrades.map((t,i)=>{
                   const res=parseFloat(t.result);
-                  const exitIcon=t.exitOutcome==="manual"?"⭐":t.exitOutcome==="smallStop"?"⏹":t.exitOutcome==="hardStop"?"🔺":"—";
+                  const exitIcon=t.exitOutcome==="winner"?"✅":t.exitOutcome==="manual"?"⭐":t.exitOutcome==="smallStop"?"⏹":t.exitOutcome==="hardStop"?"🔺":"—";
                   return(
                     <tr key={i} style={{borderBottom:`1px solid ${C.border}`}}>
                       <td style={{padding:"7px 10px",color:C.muted}}>{t.sessionDate}</td>
                       <td style={{padding:"7px 10px",color:t.direction==="LONG"?C.green:t.direction==="SHORT"?C.red:C.muted}}>{t.direction||"—"}</td>
                       <td style={{padding:"7px 10px",color:C.muted}}>{t.contracts||"—"}</td>
                       <td style={{padding:"7px 10px",color:isNaN(res)?C.muted:res>=0?C.green:C.red,fontWeight:700}}>
-                        {isNaN(res)?t.result:`${res>=0?"✅ ":""}${res>=0?"+":""}${res}`}
+                        {isNaN(res)?t.result:`${res>=0?"+":""}${res}`}
                       </td>
                       <td style={{padding:"7px 10px",fontSize:14}}>{exitIcon}</td>
                       <td style={{padding:"7px 10px",color:C.yellow}}>{t.mae||"—"}</td>
@@ -1221,6 +1214,7 @@ function AnalyticsDashboard({historicalSessions}){
             const wr=st.filter(t=>!isNaN(parseFloat(t.result)));
             const spnl=wr.reduce((x,t)=>x+parseFloat(t.result),0);
             const wins=wr.filter(t=>parseFloat(t.result)>=0).length;
+            const winners_s=st.filter(t=>t.exitOutcome==="winner").length;
             const manuals=st.filter(t=>t.exitOutcome==="manual").length;
             const hards=st.filter(t=>t.exitOutcome==="hardStop").length;
             return(
@@ -1232,8 +1226,9 @@ function AnalyticsDashboard({historicalSessions}){
                   </div>
                   <div style={{display:"flex",gap:16,alignItems:"center"}}>
                     <span style={{...mono,color:spnl>=0?C.green:C.red,fontSize:13,fontWeight:700}}>{spnl>=0?"+":""}{spnl.toFixed(0)}</span>
-                    <span style={{...mono,color:C.muted,fontSize:10}}>{wins}✅/{wr.length-wins}L</span>
-                    <span style={{...mono,color:C.green,fontSize:11}}>⭐{manuals}</span>
+                    <span style={{...mono,color:C.muted,fontSize:10}}>{wins}W/{wr.length-wins}L</span>
+                    {winners_s>0&&<span style={{...mono,color:C.green,fontSize:11}}>✅{winners_s}</span>}
+                    <span style={{...mono,color:C.blue,fontSize:11}}>⭐{manuals}</span>
                     {hards>0&&<span style={{...mono,color:C.red,fontSize:11}}>🔺{hards}</span>}
                     <span style={{...mono,color:s.survived?C.green:C.faint,fontSize:10}}>{s.survived?"✓ SURVIVED":"—"}</span>
                   </div>
@@ -1297,7 +1292,7 @@ function KaizenTradeTemplate(){
       <div style={{borderBottom:"1px solid #27272a",padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div>
           <div style={{color:"#71717a",fontSize:"10px",letterSpacing:"0.2em",marginBottom:"2px"}}>KAIZEN TRADE AUTOPSY</div>
-          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4.1.0</div>
+          <div style={{color:"#e4e4e7",fontSize:"18px",fontWeight:"700",letterSpacing:"0.05em"}}>SESSION LOG v4</div>
         </div>
         <div style={{display:"flex",gap:"8px",flexWrap:"wrap",alignItems:"center"}}>
           {saved&&<span style={{color:"#10b981",fontSize:10,fontFamily:"monospace"}}>✓ ARCHIVED</span>}
@@ -1314,8 +1309,8 @@ function KaizenTradeTemplate(){
         {/* ── Mantra ── */}
         <div style={{borderLeft:"2px solid #3f3f46",paddingLeft:"16px",marginBottom:"28px"}}>
           <div style={{color:"#52525b",fontSize:"11px",fontStyle:"italic",lineHeight:"1.8"}}>
-            I am a Hunter. I am a Sniper. I will wait for as long as it takes. One contract max.<br/>
-            Journal, Stopwatch, Ritual and Mantra after every trade. No exceptions.
+            I am a hunter. I am a sniper. I will wait for as long as it takes. One contract max.<br/>
+            Has the market earned my participation? ⭐ Land the plane. Mantra after every trade. No exceptions.
           </div>
         </div>
 
@@ -1341,7 +1336,7 @@ function KaizenTradeTemplate(){
                   ].map(({key,label})=>(
                     <div key={key} style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                       <span style={{fontFamily:"'JetBrains Mono','Courier New',monospace",color:"#a1a1aa",fontSize:"11px"}}>{label}</span>
-                      <YesNo value={session[key] ?? null} onChange={v=>updateSession(key,v)}/>
+                      <YesNo value={session[key]||null} onChange={v=>updateSession(key,v)}/>
                     </div>
                   ))}
                 </div>
@@ -1416,7 +1411,7 @@ function KaizenTradeTemplate(){
                   Win: Exclaim "YES!" → Clench fist → Rafa Nadal Reset<br/>
                   Loss: Touch nose and both eyebrows → 3 deep breaths → Ben back to Ricky
                 </div>
-                <YesNo value={session.ritualPerformed ?? null} onChange={v=>updateSession("ritualPerformed",v)}/>
+                <YesNo value={session.ritualPerformed||null} onChange={v=>updateSession("ritualPerformed",v)}/>
               </div>
 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"12px",marginBottom:"16px"}}>
@@ -1460,7 +1455,7 @@ function KaizenTradeTemplate(){
 
         {/* Footer */}
         <div style={{marginTop:"32px",borderTop:"1px solid #27272a",paddingTop:"16px",color:"#52525b",fontSize:"10px",textAlign:"center"}}>
-          Kaizen Log v4.1.0 · ✅ Winner Only · ⭐ Manual Exit · ⏹ Small Stop · 🔺 Hard Stop · The account staying open is the win condition.
+          Kaizen Log v4 · ✅ Winner · ⭐ Manual Exit · ⏹ Small Stop · 🔺 Hard Stop · The account staying open is the win condition.
         </div>
       </div>
     </div>
